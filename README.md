@@ -12,4 +12,4 @@ Browser MMORPG vertical slice: log in, pick a birth sign, fight as a Warrior wit
 Open `game/project.godot` in Godot 4.3. To skip login, run with `-- --offline`.
 
 Tests: `godot --headless --path game --script res://tests/run_tests.gd`
-Lint: `pip install gdtoolkit==4.3.3 && gdlint game && gdparse $(find game -name '*.gd')`
+Lint: `pip install gdtoolkit==4.3.3 "setuptools<81" && gdlint game && gdparse $(find game -name '*.gd')`
