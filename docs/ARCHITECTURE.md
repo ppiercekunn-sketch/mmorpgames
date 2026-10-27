@@ -51,6 +51,22 @@ here too.
 | `pets` | Pet `Actor`s | — |
 | `enemy_spawns` | `Marker2D` placed by world. Meta: `enemy_id` (String), `count` (int), `radius` (float) | enemy spawner (combat) |
 | `player_spawn` | One `Marker2D` where the player appears | game scene |
+| `clickable` | Nodes with a pickable `Area2D` that handle their own clicks (loot bags) | zone click handler |
+| `progression`, `progression_ui` | The Progression node and its UI | game scene, UI binding |
+
+**Clicks.** Zone handles left clicks in `_unhandled_input`, but first runs a
+physics point query at the cursor: if it hits an area or body belonging to a
+node in `enemies` or `clickable`, it leaves the click alone so that node's
+`Area2D.input_event` handles it. Enemy click areas use physics layer 4,
+loot bags layer 10. The game scene turns on `Viewport.physics_object_picking`.
+
+**Levels.** Progression owns `stats.level` and attribute growth (including
+applying a saved level on load). Combat reads the level but never sets it.
+`Session.character.xp` is XP within the current level. Gold uses item id
+`"gold"` in `Events.loot_dropped` / `item_picked_up`.
+
+**API URL.** Defaults to `http://localhost:8000/api`. Web builds take
+`?api=<url>` (or `window.POCKIE_API_URL`); desktop takes `-- --api=<url>`.
 
 Actors are added as children of the zone's **entities root**
 (`Zone.get_entities_root()`, a y-sorted `Node2D`).

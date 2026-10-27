@@ -399,7 +399,7 @@ func _has_valid_target() -> bool:
 func _apply_session_character() -> void:
 	var character: Dictionary = Session.character
 	display_name = str(character.get("name", "Warrior"))
-	stats.level = maxi(1, int(character.get("level", stats.level)))
+	# Level comes from Progression, which applies saved levels with their stat gains.
 	stats.bonuses = CombatRules.merge_bonuses(stats.bonuses, get_base_bonuses())
 
 
