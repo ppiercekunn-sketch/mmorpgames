@@ -29,6 +29,7 @@ func _ready() -> void:
 
 	camera = FollowCamera.new()
 	add_child(camera)
+	camera.set_bounds(zone.get_map_rect())
 	camera.follow(player)
 
 	enemy_spawner = EnemySpawner.new()
