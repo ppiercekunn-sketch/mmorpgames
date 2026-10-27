@@ -217,6 +217,54 @@ func refresh_player_bonuses() -> void:
 	player.mp_changed.emit(player.mp, max_mp)
 
 
+## The progression part of a save (see core/save_game.gd):
+## {"character": {"level", "xp", "gold"}, "inventory": {...}, "pet": {"id", "level", "xp"}}.
+## The save manager adds name, birth sign, position, vitals and playtime.
+func get_save_data() -> Dictionary:
+	var data := {
+		"character": {"level": get_level(), "xp": get_xp(), "gold": 0},
+		"inventory": {"slots": [], "equipment": {}},
+		"pet": {},
+	}
+	if inventory:
+		data["character"]["gold"] = inventory.gold
+		data["inventory"] = inventory.get_state()
+	if is_instance_valid(pet) and pet.leveling:
+		data["pet"] = {"id": pet.pet_id, "level": pet.leveling.level, "xp": pet.leveling.xp}
+	return data
+
+
+## Restores a parsed save (SaveGame.parse() output, or get_save_data()'s shape)
+## after setup(): level/XP/gold, bag and equipment (replacing the starting
+## gear) and the pet's level/XP. Missing sections are left as they are.
+## Session.character is updated to match.
+func apply_save_data(data: Dictionary) -> void:
+	if not _is_set_up:
+		push_warning("Progression: apply_save_data() called before setup()")
+		return
+	var character: Variant = data.get("character", {})
+	if character is Dictionary:
+		_apply_level(character)
+		if character.has("gold"):
+			inventory.gold = maxi(int(character["gold"]), 0)
+	var saved_inventory: Variant = data.get("inventory")
+	if saved_inventory is Dictionary:
+		inventory.set_state(saved_inventory)
+	_last_gold = inventory.gold
+	refresh_player_bonuses()
+	var pet_data: Variant = data.get("pet", {})
+	if pet_data is Dictionary and is_instance_valid(pet):
+		if str(pet_data.get("id", "")) == pet.pet_id:
+			pet.setup(player, pet.pet_id, pet.pet_def, xp_curve,
+				int(pet_data.get("level", 1)), int(pet_data.get("xp", 0)))
+	_sync_session()
+	Events.inventory_changed.emit()
+	Events.gold_changed.emit(inventory.gold)
+	for ui in get_tree().get_nodes_in_group(ProgressionUI.GROUP):
+		if ui.has_method("refresh"):
+			ui.call("refresh")
+
+
 static func rarity_color(rarity: String) -> Color:
 	return RARITY_COLORS.get(rarity, RARITY_COLORS["common"])
 
@@ -235,6 +283,21 @@ func _load_character_state() -> void:
 	player.stats.level = player_leveling.level
 	inventory.gold = int(character.get("gold", 0))
 	_last_gold = inventory.gold
+
+
+## Saved level/XP. Levels only go up here (stat gains cannot be taken back);
+## the normal flow fills Session.character from the save first, so the level
+## already matches and only the XP inside the level is set.
+func _apply_level(character: Dictionary) -> void:
+	var saved_level := int(character.get("level", player.stats.level))
+	if saved_level > player.stats.level:
+		Leveling.apply_level_gains(player.stats, saved_level - player.stats.level, xp_curve)
+	elif saved_level < player.stats.level:
+		push_warning("Progression: save is level %d but the player is already level %d"
+			% [saved_level, player.stats.level])
+	var saved_xp := int(character.get("xp", get_xp()))
+	player_leveling = Leveling.new(xp_curve, player.stats.level, saved_xp)
+	player.stats.level = player_leveling.level
 
 
 func _give_starting_gear() -> void:
