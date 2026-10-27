@@ -37,6 +37,11 @@ here too.
   node + script, a few children). Omit `uid=` attributes in hand-written
   scenes. Placeholder art is drawn with `_draw()`, `Polygon2D` or
   `ColorRect` — no binary assets yet. Real art is added through Git LFS.
+  Character images (`art/characters/<id>.png`, see `game/art/README.md`)
+  replace an actor's placeholder body when present: actors call
+  `CharacterSprite.try_attach(self, id, height)` (`core/character_sprite.gd`,
+  which loads via `core/character_art.gd`) and skip their placeholder
+  drawing when it returns a node; HP bars, labels and rings stay in `_draw()`.
 - **Indentation:** tabs. Typed GDScript (`var x: int`, `-> void`). Lint with
   `gdlint` and parse with `gdparse` (gdtoolkit 4.x).
 - **Tests:** `godot --headless --path game --script res://tests/run_tests.gd`.

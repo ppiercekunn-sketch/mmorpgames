@@ -31,6 +31,8 @@ var attack_cooldown: float = 1.5
 var body_color: Color = Color.WHITE
 var body_kind: String = "blob"
 var body_scale: float = 1.0
+## On-screen height of the CharacterArt image (enemies.json "sprite_height").
+var sprite_height: float = 48.0
 
 var _rng := RandomNumberGenerator.new()
 var _attack_timer: float = 0.0
@@ -40,6 +42,8 @@ var _facing: float = 1.0
 var _hovered: bool = false
 var _targeted: bool = false
 var _last_chase_pos: Vector2 = Vector2.INF
+## Image-based body (null = draw the placeholder shapes).
+var _art: CharacterSprite
 
 @onready var _click_area: Area2D = get_node_or_null("ClickArea")
 @onready var _body_shape: CollisionShape2D = get_node_or_null("CollisionShape2D")
@@ -60,6 +64,7 @@ func configure(id: String, data: Dictionary) -> void:
 	body_color = Color.from_string(str(data.get("color", "#ffffff")), Color.WHITE)
 	body_kind = str(data.get("body", "blob"))
 	body_scale = float(data.get("scale", 1.0))
+	sprite_height = float(data.get("sprite_height", 48.0 * body_scale))
 
 
 func _ready() -> void:
@@ -71,9 +76,10 @@ func _ready() -> void:
 	_wander_timer = _rng.randf_range(1.0, 4.0)
 	# Area2D clicks need physics picking; harmless if the world already enabled it.
 	get_viewport().physics_object_picking = true
+	_art = CharacterSprite.try_attach(self, enemy_id, sprite_height)
 	if _click_area:
-		_click_area.position = BODY_OFFSET * body_scale
-		_click_area.scale = Vector2.ONE * body_scale
+		_click_area.position = _click_center()
+		_click_area.scale = Vector2.ONE * (_click_radius() / CLICK_RADIUS)
 		_click_area.input_event.connect(_on_click_area_input_event)
 		_click_area.mouse_entered.connect(_set_hovered.bind(true))
 		_click_area.mouse_exited.connect(_set_hovered.bind(false))
@@ -90,11 +96,11 @@ func get_loot_table() -> String:
 
 ## True if a click at `world_pos` lands on this enemy's body.
 func contains_point(world_pos: Vector2) -> bool:
-	return click_distance(world_pos) <= CLICK_RADIUS * body_scale
+	return click_distance(world_pos) <= _click_radius()
 
 
 func click_distance(world_pos: Vector2) -> float:
-	return world_pos.distance_to(global_position + BODY_OFFSET * body_scale)
+	return world_pos.distance_to(global_position + _click_center())
 
 
 func take_damage(amount: int, source: Node = null, is_crit: bool = false) -> void:
@@ -199,12 +205,27 @@ func _tick_attack(player: Actor) -> void:
 	if _attack_timer > 0.0:
 		return
 	_attack_timer = attack_cooldown
+	if _art:
+		_art.play_attack(_facing)
 	var result := CombatRules.roll_damage(stats, player.stats, 1.0, _rng)
 	player.take_damage(result.amount, self, result.is_crit)
 
 
 func _find_player() -> Actor:
 	return get_tree().get_first_node_in_group("player") as Actor
+
+
+## Centre of the clickable body, relative to the feet.
+func _click_center() -> Vector2:
+	if _art:
+		return Vector2(0.0, -sprite_height * 0.5)
+	return BODY_OFFSET * body_scale
+
+
+func _click_radius() -> float:
+	if _art:
+		return maxf(CLICK_RADIUS * body_scale, sprite_height * 0.45)
+	return CLICK_RADIUS * body_scale
 
 
 func _select_as_target() -> void:
@@ -243,15 +264,19 @@ func _despawn() -> void:
 func _draw() -> void:
 	var s := body_scale
 	var center := BODY_OFFSET * s
-	# Shadow
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.45))
-	draw_circle(Vector2.ZERO, 14.0 * s, Color(0, 0, 0, 0.3))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if _art == null:
+		# Shadow (CharacterSprite draws its own)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.45))
+		draw_circle(Vector2.ZERO, 14.0 * s, Color(0, 0, 0, 0.3))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if _targeted or _hovered:
 		var ring_color := Color(1, 0.3, 0.3) if _targeted else Color(1, 1, 1, 0.6)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.5))
 		draw_arc(Vector2.ZERO, 20.0 * s, 0.0, TAU, 32, ring_color, 2.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if _art:
+		_draw_hp_bar(Vector2(0.0, -sprite_height - 8.0))
+		return
 	var color := body_color.lightened(0.6) if _hit_flash > 0.0 else body_color
 	match body_kind:
 		"beast":
