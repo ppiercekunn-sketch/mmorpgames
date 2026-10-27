@@ -1,0 +1,14 @@
+{
+	"aries": { "name": "Aries", "element": "fire", "passive": { "attack": 3 }, "description": "+3 attack" },
+	"taurus": { "name": "Taurus", "element": "earth", "passive": { "defense": 3 }, "description": "+3 defense" },
+	"gemini": { "name": "Gemini", "element": "air", "passive": { "crit_chance": 0.02 }, "description": "+2% critical chance" },
+	"cancer": { "name": "Cancer", "element": "water", "passive": { "max_hp": 40 }, "description": "+40 max HP" },
+	"leo": { "name": "Leo", "element": "fire", "passive": { "attack": 2, "max_hp": 15 }, "description": "+2 attack, +15 max HP" },
+	"virgo": { "name": "Virgo", "element": "earth", "passive": { "max_mp": 25 }, "description": "+25 max MP" },
+	"libra": { "name": "Libra", "element": "air", "passive": { "defense": 2, "max_mp": 10 }, "description": "+2 defense, +10 max MP" },
+	"scorpio": { "name": "Scorpio", "element": "water", "passive": { "crit_chance": 0.01, "attack": 2 }, "description": "+1% critical chance, +2 attack" },
+	"sagittarius": { "name": "Sagittarius", "element": "fire", "passive": { "move_speed": 15 }, "description": "+15 move speed" },
+	"capricorn": { "name": "Capricorn", "element": "earth", "passive": { "max_hp": 25, "defense": 1 }, "description": "+25 max HP, +1 defense" },
+	"aquarius": { "name": "Aquarius", "element": "air", "passive": { "max_mp": 15, "crit_chance": 0.01 }, "description": "+15 max MP, +1% critical chance" },
+	"pisces": { "name": "Pisces", "element": "water", "passive": { "max_hp": 20, "max_mp": 10 }, "description": "+20 max HP, +10 max MP" }
+}
