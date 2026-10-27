@@ -207,6 +207,53 @@ func get_equipped(slot: String) -> String:
 	return equipment.get(slot, "")
 
 
+## Bag + equipment as plain data for save games (gold is saved separately):
+## {"slots": [{} | {"id", "qty"}, ...], "equipment": {slot: item_id}}.
+func get_state() -> Dictionary:
+	var bag: Array = []
+	for stack in slots:
+		bag.append(stack.duplicate())
+	return {"slots": bag, "equipment": equipment.duplicate()}
+
+
+## Replaces bag and equipment with a saved state (see get_state()). Trusts
+## nothing: unknown items are dropped, stacks are capped at max_stack (the
+## overflow is added back where it fits), gear in the wrong slot goes to the
+## bag. Slot positions are kept. Emits `changed` and `equipment_changed`.
+func set_state(state: Dictionary) -> void:
+	var overflow: Array[Dictionary] = []
+	for i in slots.size():
+		slots[i] = {}
+	var saved_slots: Variant = state.get("slots", [])
+	if saved_slots is Array:
+		for i in (saved_slots as Array).size():
+			var stack := _valid_stack(saved_slots[i])
+			if stack.is_empty():
+				continue
+			var keep := mini(int(stack["qty"]), max_stack(stack["id"]))
+			if i < slots.size():
+				slots[i] = {"id": stack["id"], "qty": keep}
+			else:
+				keep = 0
+			if int(stack["qty"]) > keep:
+				overflow.append({"id": stack["id"], "qty": int(stack["qty"]) - keep})
+	var saved_gear: Variant = state.get("equipment", {})
+	for slot in EQUIP_SLOTS:
+		equipment[slot] = ""
+		var item_id: Variant = saved_gear.get(slot, "") if saved_gear is Dictionary else ""
+		if not item_id is String or item_id == "" or get_item_def(item_id).is_empty():
+			continue
+		if can_equip(item_id) and get_item_def(item_id)["slot"] == slot:
+			equipment[slot] = item_id
+		else:
+			overflow.append({"id": item_id, "qty": 1})
+	for stack in overflow:
+		add_item(stack["id"], int(stack["qty"]))
+	changed.emit()
+	for slot in EQUIP_SLOTS:
+		equipment_changed.emit(slot)
+
+
 ## Sum of the "bonuses" of every equipped item.
 func gear_bonuses() -> Dictionary:
 	var total := {}
@@ -246,6 +293,21 @@ static func merge_bonuses(a: Dictionary, b: Dictionary) -> Dictionary:
 		else:
 			merged[key] = value
 	return merged
+
+
+## {"id", "qty"} for a saved stack of a known item, else {}.
+func _valid_stack(entry: Variant) -> Dictionary:
+	if not entry is Dictionary:
+		return {}
+	var item_id: Variant = (entry as Dictionary).get("id")
+	var qty: Variant = (entry as Dictionary).get("qty")
+	if not item_id is String or get_item_def(item_id).is_empty():
+		return {}
+	if typeof(qty) != TYPE_INT and typeof(qty) != TYPE_FLOAT:
+		return {}
+	if int(qty) < 1:
+		return {}
+	return {"id": item_id, "qty": int(qty)}
 
 
 func _take_from(index: int, qty: int) -> void:

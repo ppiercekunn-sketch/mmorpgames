@@ -75,6 +75,12 @@ func bind(p: Progression) -> void:
 	_refresh_all()
 
 
+## Redraws everything from the bound Progression (e.g. after loading a save).
+func refresh() -> void:
+	if progression and not _is_duplicate:
+		_refresh_all()
+
+
 func toggle_inventory() -> void:
 	_window.visible = not _window.visible
 	if _window.visible:
