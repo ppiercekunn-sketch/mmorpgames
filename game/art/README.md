@@ -56,5 +56,7 @@ imports them (this creates the `.png.import` files; commit them too).
 
 ## Git LFS
 
-`*.png` goes through Git LFS (see `.gitattributes`). Run `git lfs install`
-once before committing art.
+Character sprites in `art/characters/` are small (512x512) and are committed
+as plain files, not through LFS. Other `*.png` art and audio go through Git
+LFS (see `.gitattributes`); run `git lfs install` once before committing
+those.
