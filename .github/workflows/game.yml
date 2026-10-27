@@ -125,7 +125,7 @@ jobs:
             fi
           }
           smoke offline -- --offline
-          smoke login
+          smoke title
 
   export:
     needs: [lint, test]
