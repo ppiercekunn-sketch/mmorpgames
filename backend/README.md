@@ -1,6 +1,6 @@
 # Pockie Saints Remake — backend
 
-Laravel 11 JSON API for accounts, auth tokens (Sanctum personal access tokens)
+Laravel 12 JSON API for accounts, auth tokens (Sanctum personal access tokens)
 and characters. The contract is [`docs/api.md`](../docs/api.md).
 
 ## Requirements
