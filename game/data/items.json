@@ -1,0 +1,77 @@
+{
+	"novice_sword": {
+		"name": "Novice Sword", "type": "equipment", "slot": "weapon", "rarity": "common",
+		"level_req": 1, "max_stack": 1, "value": 10,
+		"bonuses": { "attack": 6 },
+		"description": "A plain blade issued to every new Saint."
+	},
+	"novice_cap": {
+		"name": "Novice Cap", "type": "equipment", "slot": "head", "rarity": "common",
+		"level_req": 1, "max_stack": 1, "value": 8,
+		"bonuses": { "defense": 2, "max_hp": 15 },
+		"description": "Padded cloth that turns away the worst of a slime's slap."
+	},
+	"novice_tunic": {
+		"name": "Novice Tunic", "type": "equipment", "slot": "body", "rarity": "common",
+		"level_req": 1, "max_stack": 1, "value": 12,
+		"bonuses": { "defense": 4, "max_hp": 25 },
+		"description": "Sturdy travelling clothes."
+	},
+	"novice_boots": {
+		"name": "Novice Boots", "type": "equipment", "slot": "feet", "rarity": "common",
+		"level_req": 1, "max_stack": 1, "value": 8,
+		"bonuses": { "defense": 1, "move_speed": 10 },
+		"description": "Light boots for long roads."
+	},
+	"novice_ring": {
+		"name": "Novice Ring", "type": "equipment", "slot": "ring", "rarity": "common",
+		"level_req": 1, "max_stack": 1, "value": 15,
+		"bonuses": { "max_mp": 15, "crit_chance": 0.01 },
+		"description": "A copper band etched with a faint star."
+	},
+	"bandit_blade": {
+		"name": "Bandit Blade", "type": "equipment", "slot": "weapon", "rarity": "uncommon",
+		"level_req": 4, "max_stack": 1, "value": 40,
+		"bonuses": { "attack": 12, "crit_chance": 0.02 },
+		"description": "Notched, but sharp where it counts."
+	},
+	"wolfhide_vest": {
+		"name": "Wolfhide Vest", "type": "equipment", "slot": "body", "rarity": "uncommon",
+		"level_req": 3, "max_stack": 1, "value": 35,
+		"bonuses": { "defense": 7, "max_hp": 40, "move_speed": 5 },
+		"description": "Warm, light and smells faintly of the forest."
+	},
+	"star_ring": {
+		"name": "Star Ring", "type": "equipment", "slot": "ring", "rarity": "rare",
+		"level_req": 6, "max_stack": 1, "value": 120,
+		"bonuses": { "attack": 5, "max_mp": 30, "crit_chance": 0.04 },
+		"description": "Set with a shard of fallen star iron."
+	},
+	"hp_potion": {
+		"name": "HP Potion", "type": "consumable", "rarity": "common",
+		"max_stack": 20, "value": 5,
+		"effect": { "hp": 120 },
+		"description": "Restores 120 HP."
+	},
+	"mp_potion": {
+		"name": "MP Potion", "type": "consumable", "rarity": "common",
+		"max_stack": 20, "value": 5,
+		"effect": { "mp": 60 },
+		"description": "Restores 60 MP."
+	},
+	"slime_jelly": {
+		"name": "Slime Jelly", "type": "material", "rarity": "common",
+		"max_stack": 99, "value": 1,
+		"description": "Sticky. Alchemists pay a little for it."
+	},
+	"wolf_fang": {
+		"name": "Wolf Fang", "type": "material", "rarity": "common",
+		"max_stack": 99, "value": 2,
+		"description": "Used in forging and charms."
+	},
+	"star_iron": {
+		"name": "Star Iron", "type": "material", "rarity": "uncommon",
+		"max_stack": 99, "value": 10,
+		"description": "Forge material for refining gear (forge coming soon)."
+	}
+}

@@ -1,0 +1,14 @@
+{
+	"star_pup": {
+		"name": "Star Pup",
+		"color": "#ffd166",
+		"base": { "strength": 6, "agility": 12, "intellect": 4, "vitality": 6 },
+		"growth": { "strength": 2, "agility": 2, "intellect": 1, "vitality": 2 },
+		"bonuses": { "max_hp": -60, "move_speed": 40 },
+		"attack_range": 40.0,
+		"attack_interval": 1.4,
+		"respawn_seconds": 10.0,
+		"xp_share": 0.5,
+		"description": "A loyal pup born from a falling star. Fights at your side."
+	}
+}
