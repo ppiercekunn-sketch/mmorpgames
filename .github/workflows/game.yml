@@ -1,0 +1,239 @@
+name: game
+
+on:
+  push:
+    paths:
+      - "game/**"
+      - ".github/workflows/game.yml"
+  pull_request:
+    paths:
+      - "game/**"
+      - ".github/workflows/game.yml"
+
+concurrency:
+  group: game-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Explicit bash gives `-eo pipefail`, so `cmd | tee log` fails when cmd fails.
+    shell: bash
+
+env:
+  GODOT_RELEASE: "4.3-stable"
+  GODOT_TEMPLATES_DIR: "4.3.stable"
+  GODOT_DOWNLOAD: "https://github.com/godotengine/godot/releases/download/4.3-stable"
+  # Lines that mean a GDScript failed to parse/load or crashed at runtime.
+  SCRIPT_ERROR_PATTERN: "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gdtoolkit
+        run: pip install gdtoolkit==4.3.3
+
+      - name: gdlint
+        run: gdlint game
+
+      - name: gdparse
+        run: find game -name '*.gd' -not -path 'game/.godot/*' -print0 | xargs -0 gdparse
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Godot editor
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-editor-${{ env.GODOT_RELEASE }}-linux-x86_64
+
+      - name: Install Godot
+        run: |
+          if [ ! -x "$HOME/godot/godot" ]; then
+            mkdir -p "$HOME/godot" /tmp/godot-dl
+            curl -fsSL -o /tmp/godot-dl/godot.zip \
+              "$GODOT_DOWNLOAD/Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
+            unzip -q /tmp/godot-dl/godot.zip -d /tmp/godot-dl
+            mv "/tmp/godot-dl/Godot_v${GODOT_RELEASE}_linux.x86_64" "$HOME/godot/godot"
+            chmod +x "$HOME/godot/godot"
+          fi
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+          "$HOME/godot/godot" --version
+
+      - name: Import project
+        run: |
+          # --import (4.3+) scans, imports and quits. Fall back to a plain
+          # editor run if it is unavailable or fails.
+          if ! timeout 600 godot --headless --path game --import; then
+            echo "::warning::--import failed, falling back to --editor --quit"
+            timeout 600 godot --headless --path game --editor --quit || true
+          fi
+          if [ ! -f game/.godot/global_script_class_cache.cfg ]; then
+            echo "::warning::class cache missing after import, running the editor once more"
+            timeout 600 godot --headless --path game --editor --quit || true
+          fi
+          test -f game/.godot/global_script_class_cache.cfg
+
+      - name: Run tests
+        run: |
+          set +e
+          timeout 300 godot --headless --path game --script res://tests/run_tests.gd 2>&1 | tee tests.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -qE "$SCRIPT_ERROR_PATTERN" tests.log; then
+            echo "::error::Script errors while running tests (see log above)"
+            exit 1
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Tests failed (exit code $status)"
+            exit "$status"
+          fi
+
+      - name: Smoke boot
+        run: |
+          # --quit-after counts main loop iterations (frames) in 4.3. It is an
+          # engine flag, so it goes before `--`; game args (--offline) go after.
+          smoke() {
+            local label="$1"; shift
+            set +e
+            timeout 60 godot --headless --path game --quit-after 300 "$@" 2>&1 | tee "smoke-$label.log"
+            local status=${PIPESTATUS[0]}
+            set -e
+            if grep -qE "$SCRIPT_ERROR_PATTERN" "smoke-$label.log"; then
+              echo "::error::Script errors during $label smoke boot"
+              return 1
+            fi
+            if [ "$status" -eq 124 ]; then
+              echo "::error::$label smoke boot did not quit within 60s"
+              return 1
+            fi
+            if [ "$status" -ne 0 ]; then
+              echo "::error::$label smoke boot exited with $status"
+              return 1
+            fi
+          }
+          smoke offline -- --offline
+          smoke login
+
+  export:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Godot editor
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-editor-${{ env.GODOT_RELEASE }}-linux-x86_64
+
+      - name: Install Godot
+        run: |
+          if [ ! -x "$HOME/godot/godot" ]; then
+            mkdir -p "$HOME/godot" /tmp/godot-dl
+            curl -fsSL -o /tmp/godot-dl/godot.zip \
+              "$GODOT_DOWNLOAD/Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
+            unzip -q /tmp/godot-dl/godot.zip -d /tmp/godot-dl
+            mv "/tmp/godot-dl/Godot_v${GODOT_RELEASE}_linux.x86_64" "$HOME/godot/godot"
+            chmod +x "$HOME/godot/godot"
+          fi
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Cache export templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/${{ env.GODOT_TEMPLATES_DIR }}
+          key: godot-templates-${{ env.GODOT_RELEASE }}-web-nothreads-linux-x86_64
+
+      - name: Install export templates
+        run: |
+          dest="$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATES_DIR"
+          if [ ! -f "$dest/version.txt" ]; then
+            mkdir -p "$dest" /tmp/templates-dl
+            curl -fsSL -o /tmp/templates-dl/templates.tpz \
+              "$GODOT_DOWNLOAD/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+            unzip -q /tmp/templates-dl/templates.tpz -d /tmp/templates-dl
+            # Keep only what the presets need, so the cache stays small
+            # (the full archive is over 1 GB).
+            src=/tmp/templates-dl/templates
+            cp "$src/version.txt" "$dest/"
+            cp "$src"/web_nothreads_*.zip "$dest/"
+            cp "$src"/linux_debug.x86_64 "$src"/linux_release.x86_64 "$dest/"
+          fi
+          ls -la "$dest"
+
+      - name: Import project
+        run: |
+          if ! timeout 600 godot --headless --path game --import; then
+            echo "::warning::--import failed, falling back to --editor --quit"
+            timeout 600 godot --headless --path game --editor --quit || true
+          fi
+
+      - name: Export Web
+        run: |
+          mkdir -p build/web
+          timeout 600 godot --headless --path game \
+            --export-release "Web" "$GITHUB_WORKSPACE/build/web/index.html" 2>&1 | tee export-web.log
+          # Godot can exit 0 even when an export fails, so check the output.
+          for f in index.html index.js index.wasm index.pck; do
+            test -s "build/web/$f" || { echo "::error::Web export missing $f"; exit 1; }
+          done
+
+      - name: Export Linux Server
+        run: |
+          mkdir -p build/server
+          timeout 600 godot --headless --path game \
+            --export-release "Linux Server" "$GITHUB_WORKSPACE/build/server/pockie_server.x86_64" \
+            2>&1 | tee export-server.log
+          test -s build/server/pockie_server.x86_64 \
+            || { echo "::error::Linux Server export missing binary"; exit 1; }
+          chmod +x build/server/pockie_server.x86_64
+
+      - name: Report web build size
+        run: |
+          total_bytes=$(du -sb build/web | cut -f1)
+          gzip_total=0
+          {
+            echo "## Web build size"
+            echo
+            echo "Total on disk: **$(numfmt --to=iec --suffix=B "$total_bytes")** ($total_bytes bytes)"
+            echo
+            echo "| File | Size | gzip -9 |"
+            echo "|---|---:|---:|"
+            for f in build/web/*; do
+              size=$(stat -c %s "$f")
+              gz=$(gzip -9 -c "$f" | wc -c)
+              gzip_total=$((gzip_total + gz))
+              echo "| $(basename "$f") | $(numfmt --to=iec --suffix=B "$size") | $(numfmt --to=iec --suffix=B "$gz") |"
+            done
+            echo
+            echo "Approximate transfer size with gzip: **$(numfmt --to=iec --suffix=B "$gzip_total")**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+          if-no-files-found: error
+
+      - name: Upload server build
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-server-build
+          path: build/server
+          if-no-files-found: error
