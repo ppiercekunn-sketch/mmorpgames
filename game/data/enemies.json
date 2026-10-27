@@ -13,7 +13,8 @@
 		"loot_table": "slime_drops",
 		"color": "#6fd46f",
 		"body": "blob",
-		"scale": 1.0
+		"scale": 1.0,
+		"sprite_height": 36.0
 	},
 	"wolf": {
 		"name": "Grey Wolf",
@@ -29,7 +30,8 @@
 		"loot_table": "wolf_drops",
 		"color": "#9a9aa8",
 		"body": "beast",
-		"scale": 1.0
+		"scale": 1.0,
+		"sprite_height": 48.0
 	},
 	"bandit": {
 		"name": "Road Bandit",
@@ -45,7 +47,8 @@
 		"loot_table": "bandit_drops",
 		"color": "#b5653a",
 		"body": "humanoid",
-		"scale": 1.0
+		"scale": 1.0,
+		"sprite_height": 64.0
 	},
 	"field_boss": {
 		"name": "Bandit Warlord",
@@ -61,6 +64,7 @@
 		"loot_table": "boss_drops",
 		"color": "#8c2f39",
 		"body": "humanoid",
-		"scale": 1.7
+		"scale": 1.7,
+		"sprite_height": 110.0
 	}
 }

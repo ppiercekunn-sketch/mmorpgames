@@ -2,6 +2,7 @@
 	"star_pup": {
 		"name": "Star Pup",
 		"color": "#ffd166",
+		"sprite_height": 34.0,
 		"base": { "strength": 6, "agility": 12, "intellect": 4, "vitality": 6 },
 		"growth": { "strength": 2, "agility": 2, "intellect": 1, "vitality": 2 },
 		"bonuses": { "max_hp": -60, "move_speed": 40 },

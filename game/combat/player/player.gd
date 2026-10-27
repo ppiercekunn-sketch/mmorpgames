@@ -33,6 +33,9 @@ const CHARGE_STOP_DISTANCE := 36.0
 ## Re-path towards the target only when it moved this far.
 const REPATH_DISTANCE := 12.0
 const HOTBAR_SIZE := 6
+## CharacterArt id and on-screen height of the player's image (when present).
+const ART_ID := "warrior"
+const ART_HEIGHT := 64.0
 
 ## Disable to ignore the NavAgent and walk in straight lines (sandbox, or any
 ## scene without a navigation map).
@@ -65,6 +68,8 @@ var _swing_time: float = 0.0
 var _ring_time: float = 0.0
 var _ring_radius: float = 0.0
 var _ring_color: Color = Color.WHITE
+## Image-based body (null = draw the placeholder shapes).
+var _art: CharacterSprite
 
 
 func _ready() -> void:
@@ -79,6 +84,10 @@ func _ready() -> void:
 	spawn_point = global_position
 	_rng.randomize()
 	_load_skills()
+	_art = CharacterSprite.try_attach(self, ART_ID, ART_HEIGHT)
+	if _art:
+		# _on_died fades the whole player node already.
+		_art.death_alpha = 1.0
 	Events.ground_clicked.connect(_on_ground_clicked)
 	Events.actor_died.connect(_on_actor_died)
 	died.connect(_on_died)
@@ -266,7 +275,7 @@ func _tick_engagement() -> void:
 		try_cast(skill_id)
 	elif _auto_attack_timer <= 0.0:
 		_auto_attack_timer = AUTO_ATTACK_INTERVAL
-		_swing_time = 0.2
+		_start_swing(0.2)
 		_deal_damage(current_target, AUTO_ATTACK_POWER)
 
 
@@ -318,8 +327,8 @@ func _execute_skill(skill_id: String, skill: Dictionary) -> void:
 	match str(skill.get("effect", "")):
 		"damage":
 			_engaging = true
-			_swing_time = 0.25
 			_face(current_target.global_position)
+			_start_swing(0.25)
 			_deal_damage(current_target, power)
 		"charge":
 			_engaging = true
@@ -327,7 +336,7 @@ func _execute_skill(skill_id: String, skill: Dictionary) -> void:
 		"aoe_damage":
 			var radius: float = float(skill.get("aoe_radius", 80.0))
 			_show_ring(radius, Color(1.0, 0.85, 0.4))
-			_swing_time = 0.3
+			_start_swing(0.3)
 			for enemy in _hostiles_within(radius):
 				_deal_damage(enemy, power)
 		"buff_attack", "buff_defense":
@@ -357,7 +366,7 @@ func _start_charge(target: Actor, power: float) -> void:
 
 func _finish_charge(target: Actor, power: float) -> void:
 	_charging = false
-	_swing_time = 0.25
+	_start_swing(0.25)
 	if is_dead or not is_instance_valid(target) or target.is_dead:
 		return
 	_deal_damage(target, power)
@@ -450,6 +459,12 @@ func _face(world_pos: Vector2) -> void:
 		_facing = signf(dx)
 
 
+func _start_swing(duration: float) -> void:
+	_swing_time = duration
+	if _art:
+		_art.play_attack(_facing)
+
+
 func _show_ring(radius: float, color: Color) -> void:
 	_ring_radius = radius
 	_ring_color = color
@@ -460,9 +475,10 @@ func _show_ring(radius: float, color: Color) -> void:
 
 
 func _draw() -> void:
-	# Shadow
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.45))
-	draw_circle(Vector2.ZERO, 13.0, Color(0, 0, 0, 0.3))
+	if _art == null:
+		# Shadow (CharacterSprite draws its own)
+		draw_circle(Vector2.ZERO, 13.0, Color(0, 0, 0, 0.3))
 	if _ring_time > 0.0:
 		var ring := _ring_color
 		ring.a = _ring_time / 0.35
@@ -470,6 +486,8 @@ func _draw() -> void:
 	if _buffs.has("buff_defense"):
 		draw_arc(Vector2.ZERO, 22.0, 0.0, TAU, 32, Color(0.4, 0.7, 1, 0.8), 2.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if _art:
+		return
 	var f := _facing
 	# Legs, body, head
 	draw_rect(Rect2(-7, -10, 5, 10), Color(0.25, 0.2, 0.15))

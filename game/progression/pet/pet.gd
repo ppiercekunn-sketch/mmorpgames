@@ -20,6 +20,8 @@ const ATTACK_ANIM_TIME := 0.2
 const BODY_RADIUS := 9.0
 const PETS_LAYER := 1 << 3
 const WORLD_LAYER := 1
+## Default on-screen height of the CharacterArt image (pets.json "sprite_height").
+const DEFAULT_SPRITE_HEIGHT := 34.0
 
 var pet_id: String = ""
 var pet_def: Dictionary = {}
@@ -40,6 +42,8 @@ var _nav_check_timer: float = 0.0
 var _nav_ready: bool = false
 var _body_color := Color(1.0, 0.82, 0.4)
 var _shape: CollisionShape2D
+## Image-based body (null = draw the placeholder shapes).
+var _art: CharacterSprite
 
 
 ## Call before adding the pet to the tree (or any time to re-level it).
@@ -74,6 +78,8 @@ func _ready() -> void:
 	circle.radius = 7.0
 	_shape.shape = circle
 	add_child(_shape)
+	var art_height := float(pet_def.get("sprite_height", DEFAULT_SPRITE_HEIGHT))
+	_art = CharacterSprite.try_attach(self, pet_id, art_height)
 	_rng.randomize()
 	Events.target_changed.connect(_on_target_changed)
 	Events.actor_damaged.connect(_on_actor_damaged)
@@ -156,6 +162,8 @@ func _attack() -> void:
 	var hit := PetRules.damage(stats.attack(), target_defense, stats.crit_chance(), _rng)
 	_attack_cooldown = attack_interval
 	_attack_anim = ATTACK_ANIM_TIME
+	if _art:
+		_art.play_attack(_facing)
 	target.take_damage(int(hit["amount"]), self, bool(hit["crit"]))
 
 
@@ -260,6 +268,9 @@ func _on_hp_changed(_current: int, _maximum: int) -> void:
 func _draw() -> void:
 	var alpha := 0.3 if is_dead else 1.0
 	var lunge := Vector2(_facing * 7.0 * (_attack_anim / ATTACK_ANIM_TIME), 0.0)
+	if _art:
+		_draw_overlay(alpha, minf(0.0, 25.0 - _art.height))
+		return
 	# Shadow
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.45))
 	draw_circle(Vector2.ZERO, 11.0, Color(0, 0, 0, 0.3 * alpha))
@@ -275,14 +286,18 @@ func _draw() -> void:
 		c + Vector2(8, -4), c + Vector2(5, -15), c + Vector2(1, -8)]), col)
 	draw_circle(c + Vector2(_facing * 4.0, -2.0), 1.7, Color(0.1, 0.1, 0.15, alpha))
 	draw_circle(c + Vector2(-_facing * 2.0, -6.0), 1.5, Color(1, 1, 1, alpha))
-	# Name, level and HP bar
+	_draw_overlay(alpha, 0.0)
+
+
+## Name, level and HP bar, raised by `lift` (negative = up) above a tall image.
+func _draw_overlay(alpha: float, lift: float) -> void:
 	var font := ThemeDB.fallback_font
 	var label := "%s Lv%d" % [display_name, get_level()]
-	draw_string_outline(font, Vector2(-50, -32), label, HORIZONTAL_ALIGNMENT_CENTER,
+	draw_string_outline(font, Vector2(-50, -32 + lift), label, HORIZONTAL_ALIGNMENT_CENTER,
 		100, 10, 3, Color(0, 0, 0, 0.8 * alpha))
-	draw_string(font, Vector2(-50, -32), label, HORIZONTAL_ALIGNMENT_CENTER,
+	draw_string(font, Vector2(-50, -32 + lift), label, HORIZONTAL_ALIGNMENT_CENTER,
 		100, 10, Color(1, 0.95, 0.7, alpha))
 	if stats and not is_dead:
 		var ratio := clampf(float(hp) / float(maxi(stats.max_hp(), 1)), 0.0, 1.0)
-		draw_rect(Rect2(-14, -29, 28, 3), Color(0.15, 0.05, 0.05, 0.8))
-		draw_rect(Rect2(-14, -29, 28 * ratio, 3), Color(0.4, 0.9, 0.4))
+		draw_rect(Rect2(-14, -29 + lift, 28, 3), Color(0.15, 0.05, 0.05, 0.8))
+		draw_rect(Rect2(-14, -29 + lift, 28 * ratio, 3), Color(0.4, 0.9, 0.4))
