@@ -1,0 +1,44 @@
+{
+	"slime_drops": {
+		"gold_min": 1, "gold_max": 4,
+		"entries": [
+			{ "item_id": "slime_jelly", "chance": 0.5, "min_qty": 1, "max_qty": 2 },
+			{ "item_id": "hp_potion", "chance": 0.2, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "novice_cap", "chance": 0.05, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "novice_boots", "chance": 0.05, "min_qty": 1, "max_qty": 1 }
+		]
+	},
+	"wolf_drops": {
+		"gold_min": 3, "gold_max": 8,
+		"entries": [
+			{ "item_id": "wolf_fang", "chance": 0.5, "min_qty": 1, "max_qty": 2 },
+			{ "item_id": "hp_potion", "chance": 0.2, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "mp_potion", "chance": 0.15, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "novice_tunic", "chance": 0.06, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "novice_boots", "chance": 0.05, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "wolfhide_vest", "chance": 0.04, "min_qty": 1, "max_qty": 1 }
+		]
+	},
+	"bandit_drops": {
+		"gold_min": 8, "gold_max": 20,
+		"entries": [
+			{ "item_id": "hp_potion", "chance": 0.3, "min_qty": 1, "max_qty": 2 },
+			{ "item_id": "mp_potion", "chance": 0.25, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "star_iron", "chance": 0.1, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "novice_cap", "chance": 0.06, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "novice_ring", "chance": 0.06, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "bandit_blade", "chance": 0.05, "min_qty": 1, "max_qty": 1 }
+		]
+	},
+	"boss_drops": {
+		"gold_min": 60, "gold_max": 120,
+		"entries": [
+			{ "item_id": "star_iron", "chance": 1.0, "min_qty": 2, "max_qty": 4 },
+			{ "item_id": "hp_potion", "chance": 1.0, "min_qty": 2, "max_qty": 3 },
+			{ "item_id": "mp_potion", "chance": 0.5, "min_qty": 1, "max_qty": 2 },
+			{ "item_id": "bandit_blade", "chance": 0.5, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "wolfhide_vest", "chance": 0.5, "min_qty": 1, "max_qty": 1 },
+			{ "item_id": "star_ring", "chance": 0.35, "min_qty": 1, "max_qty": 1 }
+		]
+	}
+}

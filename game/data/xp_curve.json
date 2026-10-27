@@ -1,0 +1,6 @@
+{
+	"max_level": 10,
+	"xp_to_next": [100, 180, 300, 450, 650, 900, 1200, 1600, 2100],
+	"level_gains": { "strength": 2, "vitality": 2, "agility": 1, "intellect": 1 },
+	"low_level_penalty": { "level_gap": 5, "multiplier": 0.5, "step": 0.1, "minimum": 0.1 }
+}

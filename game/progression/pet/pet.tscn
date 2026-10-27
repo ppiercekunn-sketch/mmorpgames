@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://progression/pet/pet.gd" id="1_pet"]
+
+[node name="Pet" type="CharacterBody2D"]
+motion_mode = 1
+script = ExtResource("1_pet")
+
+[node name="NavAgent" type="NavigationAgent2D" parent="."]
+path_desired_distance = 6.0
+target_desired_distance = 6.0
